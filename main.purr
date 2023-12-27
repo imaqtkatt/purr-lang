@@ -1,0 +1,42 @@
+{
+  arg:int <- 10;
+  (fun x:bool -> x)(arg)
+}
+
+//(fun x:(int -> int) -> x) (fun x:int -> x) (1)
+
+//one -> 1
+
+//type inc_type : int -> int
+
+//add x:int y:int -> x + y
+
+//enum bool : true(), false().
+
+//main () -> (fun x y -> x + y)(1, 2)
+
+//id x:'a -> (fun x:'a -> x)(x)
+
+//fun x:(int -> int) y -> {
+//  z -> 1 + 2,
+//  (fun x:int -> x)(1),
+//  x(y)
+//}
+
+//inc:((bool -> num) -> num)
+
+//(())
+
+//(1 + 1) * 2
+
+//add x y -> x + y
+
+//foo x:int ->
+//  res -> x + 1;
+//  res * 2
+
+//apply f:('a -> 'b) a -> f(a)
+
+//unit -> ()
+
+//do_nothing () -> ()
