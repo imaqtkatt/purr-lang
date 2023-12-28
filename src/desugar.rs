@@ -52,9 +52,32 @@ pub enum Type {
 
 #[derive(Clone, Debug)]
 pub enum TopLevel {
-  Type(String, Type),
-  Constant(String, Expression),
-  Function(String, Vec<Pattern>, Expression),
+  Type(top_level::Type),
+  Constant(top_level::Constant),
+  Function(top_level::Function),
+}
+
+pub mod top_level {
+  use super::{Expression, Pattern, Type as T};
+
+  #[derive(Clone, Debug)]
+  pub struct Type {
+    pub name: String,
+    pub t: T,
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct Constant {
+    pub name: String,
+    pub value: Expression,
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct Function {
+    pub name: String,
+    pub pats: Vec<Pattern>,
+    pub body: Expression,
+  }
 }
 
 #[derive(Debug)]
@@ -156,15 +179,23 @@ impl From<lang::Type> for Type {
 impl From<lang::TopLevel> for TopLevel {
   fn from(value: lang::TopLevel) -> Self {
     match value {
-      lang::TopLevel::Type(name, t) => Self::Type(name, Type::from(t)),
-      lang::TopLevel::Constant(name, value) => {
-        Self::Constant(name, Expression::from(value))
-      }
-      lang::TopLevel::Function(name, pats, body) => Self::Function(
+      lang::TopLevel::Type(name, t) => Self::Type(top_level::Type {
         name,
-        pats.into_iter().map(Pattern::from).collect(),
-        Expression::from(body),
-      ),
+        t: Type::from(t),
+      }),
+      lang::TopLevel::Constant(name, value) => {
+        Self::Constant(top_level::Constant {
+          name,
+          value: Expression::from(value),
+        })
+      }
+      lang::TopLevel::Function(name, pats, body) => {
+        Self::Function(top_level::Function {
+          name,
+          pats: pats.into_iter().map(Pattern::from).collect(),
+          body: Expression::from(body),
+        })
+      }
     }
   }
 }

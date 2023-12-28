@@ -49,7 +49,7 @@ impl fmt::Display for typecheck::TypeKind {
         typecheck::HoleKind::Bound(t) => write!(f, "{t}"),
         typecheck::HoleKind::Unbound(name, _) => write!(f, "{name}"),
       },
-      typecheck::TypeKind::Error => write!(f, "Type::Error"),
+      typecheck::TypeKind::Error => write!(f, "?"),
     }
   }
 }

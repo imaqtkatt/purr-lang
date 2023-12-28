@@ -1,9 +1,7 @@
-use lexer::Lexer;
-use parser::Parser;
 use report::Reporter;
-use typecheck::Infer;
+use typecheck::Define;
 
-use crate::typecheck::Env;
+use crate::typecheck::{Declare, Env};
 
 pub mod desugar;
 pub(crate) mod display;
@@ -19,16 +17,26 @@ fn main() {
   let (ref reporter, recv) = Reporter::new();
 
   let file_name = String::from("./main.purr");
-  let src = std::fs::read_to_string(file_name).unwrap();
-  let l = Lexer::new(&src);
-  let mut pr = Parser::new(l, reporter);
-  if let Ok(e) = pr.expression() {
-    let e = desugar::Expression::from(e);
-    let env = Env::new(reporter.clone());
-    let (_elab_e, _t) = e.infer(env);
-    // println!("{elab_e:?}");
-    // println!("{t}");
-  }
+  if let Some(program) = lang::Program::new(file_name, reporter) {
+    let desugar = desugar::Program::from(program);
+    let mut env = Env::new(reporter.clone());
 
+    for def in desugar.definitions.clone() {
+      if let desugar::TopLevel::Function(fun) = def {
+        fun.define(&mut env);
+      }
+    }
+
+    
+
+    for def in desugar.definitions {
+      if let desugar::TopLevel::Function(fun) = def {
+        fun.declare(&mut env);
+      }
+    }
+
+    println!("{:#?}\n\n", env.let_decls);
+    println!("{:#?}\n\n", env.holes);
+  }
   Reporter::to_stdout(recv)
 }

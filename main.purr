@@ -1,7 +1,13 @@
-{
-  arg:int <- 10;
-  (fun x:bool -> x)(arg)
-}
+picles y:int -> y
+
+apply f:(int -> int) a:int -> f(a)
+
+batata () -> apply(fun x -> x, 1)
+
+//{
+  //arg:int <- 10;
+  //(fun x:bool -> x)(arg)
+//}
 
 //(fun x:(int -> int) -> x) (fun x:int -> x) (1)
 
@@ -40,3 +46,16 @@
 //unit -> ()
 
 //do_nothing () -> ()
+
+
+
+
+//sim int pra Hole(0)
+//picles y:int -> y
+
+//acho que sim
+
+//define: int -> Hole(0)
+//declare:
+  //body_t = infer(body): int
+  //unify(body_t, hole_t)
