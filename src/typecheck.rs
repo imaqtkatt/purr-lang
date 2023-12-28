@@ -7,16 +7,16 @@ use crate::{
   report::{self, PurrReport},
 };
 
-pub struct TypeError(String);
+pub struct TypeError(String, Vec<String>);
 
 impl PurrReport for TypeError {
   fn message(&self) -> String {
-    let Self(msg) = self;
+    let Self(msg, _) = self;
     msg.clone()
   }
 
   fn reason(&self) -> Vec<String> {
-    vec![]
+    self.1.clone()
   }
 
   fn severity(&self) -> report::Severity {
@@ -102,7 +102,7 @@ impl TypeKind {
       TypeKind::Function(a, b) => {
         let a = a.clone().instantiate(substitutions);
         let b = b.clone().instantiate(substitutions);
-        Rc::new(TypeKind::Function(a, b))
+        Type::new(TypeKind::Function(a, b))
       }
       TypeKind::Hole(hole) => match hole.get() {
         HoleKind::Bound(t) => t.instantiate(substitutions),
@@ -122,7 +122,7 @@ impl Scheme {
 #[derive(Clone)]
 pub struct Env {
   pub variables: HashMap<String, Scheme>,
-  pub let_decls: HashMap<String, Type>,
+  // pub let_decls: HashMap<String, Type>,
   pub holes: HashMap<String, Type>,
   pub level: RefCell<usize>,
   pub counter: Rc<RefCell<usize>>,
@@ -133,7 +133,7 @@ impl fmt::Debug for Env {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("Env")
       .field("variables", &self.variables)
-      .field("let_decls", &self.let_decls)
+      // .field("let_decls", &self.let_decls)
       .field("level", &self.level)
       .field("counter", &self.counter)
       // .field("reporter", &self.reporter)
@@ -145,7 +145,7 @@ impl Env {
   pub fn new(reporter: report::Reporter) -> Self {
     Self {
       variables: Default::default(),
-      let_decls: Default::default(),
+      // let_decls: Default::default(),
       holes: Default::default(),
       level: Default::default(),
       counter: Default::default(),
@@ -263,7 +263,7 @@ impl Infer for desugar::Expression {
           (elab::Expression::Variable(name), tau)
         }
         None => {
-          let err = TypeError(format!("Unbound variable '{name}'"));
+          let err = TypeError(format!("Unbound variable '{name}'"), vec![]);
           env.reporter.report(err);
           (elab::Expression::Error, TypeKind::error())
         }
@@ -320,12 +320,21 @@ impl Infer for desugar::Expression {
 
         let hole = env.new_hole();
 
-        let function_type = Type::new(TypeKind::Function(arg_t, hole.clone()));
-        if let Err(e) = unify(fun_t, function_type) {
-          let err = TypeError(format!("Application error: {e}"));
+        println!("{}", &fun_t);
+        let function_type =
+          Type::new(TypeKind::Function(arg_t.clone(), hole.clone()));
+        if let Err(e) = unify(fun_t.clone(), function_type) {
+          let err = TypeError(
+            format!("Application error: {e}"),
+            vec![
+              format!("The function has type: {fun_t}"),
+              format!("But received an argument of type {arg_t}"),
+            ],
+          );
           env.reporter.report(err);
           return (elab::Expression::Error, Type::new(TypeKind::Error));
         }
+        println!("{}", &fun_t);
         (
           elab::Expression::Application(Box::new(elab_fun), Box::new(elab_arg)),
           hole,
@@ -366,7 +375,7 @@ impl Infer for desugar::Statement {
         }
 
         if let Err(e) = unify(bind_t, t.clone()) {
-          let err = TypeError(format!("Let error: {e}"));
+          let err = TypeError(format!("Let error: {e}"), vec![]);
           env.reporter.report(err);
           return (
             (
@@ -474,9 +483,9 @@ impl Declare for top_level::Function {
   fn declare(self, env: &mut Env) {
     let (_, body_t) = self.body.infer(env.clone());
 
-    let t = env.holes.get(&self.name).cloned().unwrap();
-    if let Err(e) = unify(t.clone(), body_t) {
-      let err = TypeError(format!("Function declaration: {e}"));
+    let hole = env.holes.get(&self.name).cloned().unwrap();
+    if let Err(e) = unify(hole, body_t) {
+      let err = TypeError(format!("Function declaration: {e}"), vec![]);
       env.reporter.report(err);
     }
   }
@@ -484,17 +493,18 @@ impl Declare for top_level::Function {
 
 impl Define for top_level::Function {
   fn define(self, env: &mut Env) {
-    let fun_name = self.name.clone();
     let hole = env.new_hole();
 
-    env.holes.insert(fun_name.clone(), hole.clone());
+    env.holes.insert(self.name.clone(), hole.clone());
 
-    let fun_type = self.pats.into_iter().fold(hole, |acc, next| {
-      let ((_, binds), pat_t) = next.infer(env.clone());
+    let fun_type = self.pats.into_iter().rfold(hole, |hole, pat| {
+      let ((_, binds), pat_t) = pat.infer(env.clone());
       env.extend(binds);
-      Type::new(TypeKind::Function(pat_t, acc))
+      Type::new(TypeKind::Function(pat_t, hole))
     });
 
-    env.let_decls.insert(fun_name, fun_type);
+    let g = env.generalize(fun_type);
+
+    env.variables.insert(self.name, g);
   }
 }

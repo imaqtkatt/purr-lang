@@ -27,16 +27,11 @@ fn main() {
       }
     }
 
-    
-
     for def in desugar.definitions {
       if let desugar::TopLevel::Function(fun) = def {
         fun.declare(&mut env);
       }
     }
-
-    println!("{:#?}\n\n", env.let_decls);
-    println!("{:#?}\n\n", env.holes);
   }
   Reporter::to_stdout(recv)
 }

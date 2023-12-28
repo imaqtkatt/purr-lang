@@ -1,8 +1,10 @@
+tomate x:bool -> x
 picles y:int -> y
 
-apply f:(int -> int) a:int -> f(a)
+apply f:('a -> 'b) a:'a -> f(a)
 
-batata () -> apply(fun x -> x, 1)
+main () -> apply(tomate)
+main2 () -> apply(picles, 1)
 
 //{
   //arg:int <- 10;

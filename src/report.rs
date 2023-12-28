@@ -33,6 +33,7 @@ impl Reporter {
       for reason in report.reason() {
         println!("  > {}", reason)
       }
+      println!()
     }
   }
 }
