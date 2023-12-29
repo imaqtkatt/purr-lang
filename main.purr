@@ -1,10 +1,20 @@
 tomate x:bool -> x
-picles y:int -> y
+picles x:int -> x
 
 apply f:('a -> 'b) a:'a -> f(a)
 
-main () -> apply(tomate)
+main () -> apply(tomate, false)
 main2 () -> apply(picles, 1)
+
+// ele acha que o apply é (bool -> bool) -> bool
+// nao sei?
+
+
+
+
+
+
+
 
 //{
   //arg:int <- 10;

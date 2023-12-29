@@ -12,13 +12,18 @@ pub mod loc;
 pub mod parser;
 pub mod report;
 pub mod typecheck;
+pub mod unique_names;
 
 fn main() {
   let (ref reporter, recv) = Reporter::new();
 
   let file_name = String::from("./main.purr");
   if let Some(program) = lang::Program::new(file_name, reporter) {
-    let desugar = desugar::Program::from(program);
+    let mut desugar = desugar::Program::from(program);
+    {
+      desugar.unique_names();
+    }
+    // println!("{:?}", desugar.definitions);
     let mut env = Env::new(reporter.clone());
 
     for def in desugar.definitions.clone() {
@@ -32,6 +37,7 @@ fn main() {
         fun.declare(&mut env);
       }
     }
+    // println!("{:?}", env.variables);
   }
   Reporter::to_stdout(recv)
 }
